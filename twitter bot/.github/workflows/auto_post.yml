@@ -6,7 +6,7 @@ on:
     - cron: "0 7 * * *"
     - cron: "0 12 * * *"
     - cron: "0 17 * * *"
-  workflow_dispatch: {}  # manuel çalıştırma butonu için
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -26,7 +26,12 @@ jobs:
 
       - name: Trend fikirleri üret (günde 1 kez, saat 10'da veya manuel çalıştırmada)
         if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 7 * * *'
-        run: python trend_finder.py
+        run: |
+          if [ -f "trend_finder.py" ]; then
+            python trend_finder.py
+          else
+            find . -name "trend_finder.py" -execdir python trend_finder.py \;
+          fi
 
       - name: Sıradaki fikri paylaş
         env:
@@ -34,12 +39,17 @@ jobs:
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-        run: python poster.py
+        run: |
+          if [ -f "poster.py" ]; then
+            python poster.py
+          else
+            find . -name "poster.py" -execdir python poster.py \;
+          fi
 
       - name: Değişiklikleri kaydet
         run: |
           git config user.name "growth-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add content_ideas.json
+          git add .
           git commit -m "auto: update content queue" || echo "değişiklik yok"
           git push
